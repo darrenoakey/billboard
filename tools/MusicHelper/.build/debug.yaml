@@ -1,0 +1,81 @@
+client:
+  name: basic
+  file-system: device-agnostic
+tools: {}
+targets:
+  "PackageStructure": ["<PackageStructure>"]
+  "main": ["<music-helper-arm64-apple-macosx26.0-debug.exe>","<music-helper-arm64-apple-macosx26.0-debug.module>"]
+  "music-helper-arm64-apple-macosx26.0-debug.exe": ["<music-helper-arm64-apple-macosx26.0-debug.exe>"]
+  "music-helper-arm64-apple-macosx26.0-debug.module": ["<music-helper-arm64-apple-macosx26.0-debug.module>"]
+  "test": ["<music-helper-arm64-apple-macosx26.0-debug.exe>","<music-helper-arm64-apple-macosx26.0-debug.module>"]
+default: "main"
+nodes:
+  "/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/Sources/":
+    is-directory-structure: true
+    content-exclusion-patterns: [".git",".build"]
+  "/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/music-helper":
+    is-mutated: true
+commands:
+  "/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/music-helper-entitlement.plist":
+    tool: write-auxiliary-file
+    inputs: ["<entitlement-plist>","<com.apple.security.get-task-allow>"]
+    outputs: ["/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/music-helper-entitlement.plist"]
+    description: "Write auxiliary file /Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/music-helper-entitlement.plist"
+
+  "/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/music-helper.product/Objects.LinkFileList":
+    tool: write-auxiliary-file
+    inputs: ["<link-file-list>","/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/music_helper.build/main.swift.o"]
+    outputs: ["/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/music-helper.product/Objects.LinkFileList"]
+    description: "Write auxiliary file /Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/music-helper.product/Objects.LinkFileList"
+
+  "/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/music_helper.build/sources":
+    tool: write-auxiliary-file
+    inputs: ["<sources-file-list>","/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/Sources/main.swift"]
+    outputs: ["/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/music_helper.build/sources"]
+    description: "Write auxiliary file /Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/music_helper.build/sources"
+
+  "/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt":
+    tool: write-auxiliary-file
+    inputs: ["<swift-get-version>","/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc"]
+    outputs: ["/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"]
+    always-out-of-date: "true"
+    description: "Write auxiliary file /Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt"
+
+  "<music-helper-arm64-apple-macosx26.0-debug.exe>":
+    tool: phony
+    inputs: ["<music-helper-arm64-apple-macosx26.0-debug.exe-CodeSigning>"]
+    outputs: ["<music-helper-arm64-apple-macosx26.0-debug.exe>"]
+
+  "<music-helper-arm64-apple-macosx26.0-debug.module>":
+    tool: phony
+    inputs: ["/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/music_helper.build/main.swift.o","/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/Modules/music_helper.swiftmodule"]
+    outputs: ["<music-helper-arm64-apple-macosx26.0-debug.module>"]
+
+  "C.music-helper-arm64-apple-macosx26.0-debug.exe":
+    tool: shell
+    inputs: ["/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/music_helper.build/main.swift.o","/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/music-helper.product/Objects.LinkFileList"]
+    outputs: ["/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/music-helper"]
+    description: "Linking ./.build/arm64-apple-macosx/debug/music-helper"
+    args: ["/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc","-L","/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug","-o","/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/music-helper","-module-name","music_helper","-Xlinker","-no_warn_duplicate_libraries","-emit-executable","-Xlinker","-alias","-Xlinker","_music_helper_main","-Xlinker","_main","-Xlinker","-rpath","-Xlinker","@loader_path","@/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/music-helper.product/Objects.LinkFileList","-Xlinker","-rpath","-Xlinker","/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift-6.2/macosx","-target","arm64-apple-macosx14.0","-Xlinker","-add_ast_path","-Xlinker","/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/Modules/music_helper.swiftmodule","-plugin-path","/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing","-sdk","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk","-F","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-F","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks","-I","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-L","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-g"]
+
+  "C.music-helper-arm64-apple-macosx26.0-debug.exe-entitlements":
+    tool: shell
+    inputs: ["/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/music-helper","/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/music-helper-entitlement.plist"]
+    outputs: ["<music-helper-arm64-apple-macosx26.0-debug.exe-CodeSigning>"]
+    description: "Applying debug entitlements to ./.build/arm64-apple-macosx/debug/music-helper"
+    args: ["codesign","--force","--sign","-","--entitlements","/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/music-helper-entitlement.plist","/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/music-helper"]
+
+  "C.music-helper-arm64-apple-macosx26.0-debug.module":
+    tool: shell
+    inputs: ["/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/Sources/main.swift","/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/swift-version--58304C5D6DBC2206.txt","/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/music_helper.build/sources"]
+    outputs: ["/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/music_helper.build/main.swift.o","/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/Modules/music_helper.swiftmodule"]
+    description: "Compiling Swift Module 'music_helper' (1 sources)"
+    args: ["/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/bin/swiftc","-module-name","music_helper","-emit-dependencies","-emit-module","-emit-module-path","/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/Modules/music_helper.swiftmodule","-output-file-map","/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/music_helper.build/output-file-map.json","-incremental","-c","@/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/music_helper.build/sources","-I","/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/Modules","-target","arm64-apple-macosx14.0","-incremental","-enable-batch-mode","-serialize-diagnostics","-index-store-path","/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/index/store","-Onone","-enable-testing","-j10","-DSWIFT_PACKAGE","-DDEBUG","-DSWIFT_MODULE_RESOURCE_BUNDLE_UNAVAILABLE","-module-cache-path","/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/ModuleCache","-parseable-output","-Xfrontend","-entry-point-function-name","-Xfrontend","music_helper_main","-parse-as-library","-swift-version","5","-plugin-path","/Applications/Xcode.app/Contents/Developer/Toolchains/XcodeDefault.xctoolchain/usr/lib/swift/host/plugins/testing","-sdk","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk","-F","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-F","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks","-I","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-L","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/usr/lib","-g","-Xcc","-isysroot","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX26.2.sdk","-Xcc","-F","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/Frameworks","-Xcc","-F","-Xcc","/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/Library/PrivateFrameworks","-Xcc","-fPIC","-Xcc","-g","-package-name","musichelper"]
+
+  "PackageStructure":
+    tool: package-structure-tool
+    inputs: ["/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/Sources/","/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/Package.swift","/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/Package.resolved"]
+    outputs: ["<PackageStructure>"]
+    description: "Planning build"
+    allow-missing-inputs: true
+

@@ -1,0 +1,12 @@
+{
+  "": {
+    "swift-dependencies": "/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/music_helper.build/master.swiftdeps"
+  },
+  "/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/Sources/main.swift": {
+    "dependencies": "/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/music_helper.build/main.d",
+    "object": "/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/music_helper.build/main.swift.o",
+    "swiftmodule": "/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/music_helper.build/main~partial.swiftmodule",
+    "swift-dependencies": "/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/music_helper.build/main.swiftdeps",
+    "diagnostics": "/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/debug/music_helper.build/main.dia"
+  }
+}

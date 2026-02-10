@@ -1,0 +1,16 @@
+---
+triple:          'arm64-apple-darwin'
+binary-path:     '/Volumes/T9/darrenoakey/src/billboard/tools/MusicHelper/.build/arm64-apple-macosx/release/music-helper'
+relocations:
+  - { offset: 0xD77BD, size: 0x8, addend: 0x0, symName: '_$s12music_helper11MusicHelperV18checkAuthorizationyyFZySo014SKCloudServiceF6StatusVYbcfU_', symObjAddr: 0x0, symBinAddr: 0x100001BDC, symSize: 0x11C }
+  - { offset: 0xD7A2E, size: 0x8, addend: 0x0, symName: '_$sSo33SKCloudServiceAuthorizationStatusVIeghy_ABIeyBhy_TR', symObjAddr: 0x11C, symBinAddr: 0x100001CF8, symSize: 0x3C }
+  - { offset: 0xD7A67, size: 0x8, addend: 0x0, symName: '_$sSSSgs5Error_pSgIeghgg_So8NSStringCSgSo7NSErrorCSgIeyBhyy_TR', symObjAddr: 0x340, symBinAddr: 0x100001F1C, symSize: 0x88 }
+  - { offset: 0xD7AB6, size: 0x8, addend: 0x0, symName: ___swift_instantiateConcreteTypeFromMangledNameV2, symObjAddr: 0x74C, symBinAddr: 0x100002328, symSize: 0x44 }
+  - { offset: 0xD7ACA, size: 0x8, addend: 0x0, symName: _block_copy_helper, symObjAddr: 0x790, symBinAddr: 0x10000236C, symSize: 0x10 }
+  - { offset: 0xD7ADE, size: 0x8, addend: 0x0, symName: _block_destroy_helper, symObjAddr: 0x7A0, symBinAddr: 0x10000237C, symSize: 0x8 }
+  - { offset: 0xD7AFD, size: 0x8, addend: 0x0, symName: '_$s12music_helper11MusicHelperV12getUserToken09developerG0ySS_tFZySo33SKCloudServiceAuthorizationStatusVYbcfU_TA', symObjAddr: 0x7CC, symBinAddr: 0x1000023A8, symSize: 0x1C4 }
+  - { offset: 0xD7C96, size: 0x8, addend: 0x0, symName: '_$s12music_helper11MusicHelperV18checkAuthorizationyyFZySo014SKCloudServiceF6StatusVYbcfU_', symObjAddr: 0x0, symBinAddr: 0x100001BDC, symSize: 0x11C }
+  - { offset: 0xD7D68, size: 0x8, addend: 0x0, symName: '_$s12music_helper11MusicHelperV12getUserToken09developerG0ySS_tFZySo33SKCloudServiceAuthorizationStatusVYbcfU_ySSSg_s5Error_pSgtYbcfU_', symObjAddr: 0x158, symBinAddr: 0x100001D34, symSize: 0x1E8 }
+  - { offset: 0xD7F99, size: 0x8, addend: 0x0, symName: _music_helper_main, symObjAddr: 0x3C8, symBinAddr: 0x100001FA4, symSize: 0x18 }
+  - { offset: 0xD7FFF, size: 0x8, addend: 0x0, symName: '_$s12music_helper11MusicHelperV4mainyyFZTf4d_n', symObjAddr: 0x3E0, symBinAddr: 0x100001FBC, symSize: 0x36C }
+...

@@ -1,0 +1,14 @@
+output/
+local/
+__pycache__/
+*.pyc
+*.db
+
+# Secrets and credentials
+.env
+.env.*
+*.p8
+*.pem
+*.key
+*.p12
+*.pfx

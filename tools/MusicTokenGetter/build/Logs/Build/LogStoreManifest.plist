@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>logFormatVersion</key>
+	<integer>12</integer>
+	<key>logs</key>
+	<dict>
+		<key>B2710449-F1D1-446F-8610-4FD8B58933BF</key>
+		<dict>
+			<key>className</key>
+			<string>IDECommandLineBuildLog</string>
+			<key>documentTypeString</key>
+			<string>&lt;nil&gt;</string>
+			<key>domainType</key>
+			<string>Xcode.IDEActivityLogDomainType.BuildLog</string>
+			<key>fileName</key>
+			<string>B2710449-F1D1-446F-8610-4FD8B58933BF.xcactivitylog</string>
+			<key>hasPrimaryLog</key>
+			<true/>
+			<key>primaryObservable</key>
+			<dict>
+				<key>highLevelStatus</key>
+				<string>E</string>
+				<key>totalNumberOfAnalyzerIssues</key>
+				<integer>0</integer>
+				<key>totalNumberOfErrors</key>
+				<integer>2</integer>
+				<key>totalNumberOfTestFailures</key>
+				<integer>0</integer>
+				<key>totalNumberOfWarnings</key>
+				<integer>0</integer>
+			</dict>
+			<key>schemeIdentifier-containerName</key>
+			<string>MusicTokenGetter project</string>
+			<key>schemeIdentifier-schemeName</key>
+			<string>MusicTokenGetter</string>
+			<key>schemeIdentifier-sharedScheme</key>
+			<integer>1</integer>
+			<key>signature</key>
+			<string>Building project MusicTokenGetter with scheme MusicTokenGetter and configuration Release</string>
+			<key>timeStartedRecording</key>
+			<real>790205433.74700296</real>
+			<key>timeStoppedRecording</key>
+			<real>790205435.01484203</real>
+			<key>title</key>
+			<string>Building project MusicTokenGetter with scheme MusicTokenGetter and configuration Release</string>
+			<key>uniqueIdentifier</key>
+			<string>B2710449-F1D1-446F-8610-4FD8B58933BF</string>
+		</dict>
+	</dict>
+</dict>
+</plist>

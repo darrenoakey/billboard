@@ -1,0 +1,268 @@
+#!/usr/bin/env python3
+import argparse
+import subprocess
+import sys
+import logging
+from pathlib import Path
+
+import setproctitle
+
+TEST_OUT = Path("output/testing")
+
+
+# ##################################################################
+# configure logging
+# sets up logging to both console and file
+def configure_logging(verbose: bool = False) -> None:
+    level = logging.DEBUG if verbose else logging.INFO
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+        handlers=[
+            logging.StreamHandler(),
+        ],
+    )
+
+
+# ##################################################################
+# run shell
+# executes a shell command and returns exit code
+def run_shell(cmd: list[str]) -> int:
+    return subprocess.call(cmd)
+
+
+# ##################################################################
+# command download
+# downloads billboard hot 100 chart data from mhollingshead json repository
+def command_download(args: argparse.Namespace) -> int:
+    from src.database import DatabaseConnection
+    from src.hot100_downloader import Hot100Downloader
+
+    configure_logging(args.verbose)
+    logger = logging.getLogger(__name__)
+
+    with DatabaseConnection() as conn:
+        logger.info("Downloading Hot 100 charts from mhollingshead repository...")
+        downloader = Hot100Downloader(conn)
+        result = downloader.download_all(limit=args.limit)
+        logger.info(
+            "Hot 100 complete: downloaded=%d existing=%d failed=%d",
+            result["downloaded"],
+            result["existing"],
+            result["failed"],
+        )
+    return 0
+
+
+# ##################################################################
+# command stats
+# displays database statistics
+def command_stats(args: argparse.Namespace) -> int:
+    from src.database import DatabaseConnection, ChartRepository
+
+    configure_logging(args.verbose)
+
+    with DatabaseConnection() as conn:
+        repo = ChartRepository(conn)
+        stats = repo.get_statistics()
+        print(f"Total charts: {stats['charts']}")
+        print(f"Total chart weeks: {stats['chart_weeks']}")
+        print(f"Total entries: {stats['entries']}")
+        print("\nBy chart:")
+        for chart in stats["by_chart"]:
+            print(f"  {chart['display_name']}: {chart['weeks']} weeks")
+    return 0
+
+
+# ##################################################################
+# command test
+# runs specific tests
+def command_test(args: argparse.Namespace) -> int:
+    TEST_OUT.mkdir(parents=True, exist_ok=True)
+    target = args.target
+    log = TEST_OUT / (target.replace("/", "_").replace("::", "_") + ".log")
+    result = run_shell(
+        ["pytest", "-q", target, "--maxfail=1", "--disable-warnings", "-v"]
+    )
+    print(f"Test output written to: {log}")
+    return result
+
+
+# ##################################################################
+# command lint
+# runs linter
+def command_lint(_args: argparse.Namespace) -> int:
+    return run_shell(["ruff", "check", "--line-length", "120"])
+
+
+# ##################################################################
+# command playlists
+# generates decade playlists in apple music
+def command_playlists(args: argparse.Namespace) -> int:
+    from src.database import DatabaseConnection
+    from src.playlist_generator import (
+        create_decade_playlist,
+        generate_all_decade_playlists,
+        print_generation_summary,
+    )
+
+    configure_logging(args.verbose)
+
+    with DatabaseConnection() as conn:
+        if args.decade:
+            results = [create_decade_playlist(conn, args.decade)]
+        else:
+            results = generate_all_decade_playlists(conn)
+        print_generation_summary(results)
+    return 0
+
+
+# ##################################################################
+# command top songs
+# shows top songs for a year or decade
+def command_top_songs(args: argparse.Namespace) -> int:
+    from src.database import DatabaseConnection
+    from src.top_songs import get_top_songs_for_year, get_top_songs_for_decade
+
+    configure_logging(args.verbose)
+
+    with DatabaseConnection() as conn:
+        if args.decade:
+            songs = get_top_songs_for_decade(conn, args.decade)
+            print(f"\nTop songs for the {args.decade}s:")
+        else:
+            songs = get_top_songs_for_year(conn, args.year, limit=args.limit)
+            print(f"\nTop {args.limit} songs for {args.year}:")
+        print("=" * 60)
+        for i, song in enumerate(songs, 1):
+            print(f"{i:3}. {song.artist} - {song.song}")
+            print(f"      Weeks #1: {song.weeks_at_one}, Top 10: {song.weeks_in_top_ten}, Peak: {song.peak_position}")
+    return 0
+
+
+# ##################################################################
+# command check
+# runs full test suite and quality gates
+def command_check(_args: argparse.Namespace) -> int:
+    return run_shell(["dazpycheck"])
+
+
+# ##################################################################
+# command cleanup
+# removes duplicate playlists keeping the one with most tracks
+def command_cleanup(args: argparse.Namespace) -> int:
+    from src.playlist_cleanup import cleanup_duplicate_playlists, print_cleanup_report
+
+    configure_logging(args.verbose)
+
+    dry_run = not args.execute
+    results = cleanup_duplicate_playlists(dry_run=dry_run)
+    print_cleanup_report(results, dry_run=dry_run)
+    return 0
+
+
+# ##################################################################
+# command refresh playlists
+# deletes incomplete decade playlists and regenerates them
+def command_refresh_playlists(args: argparse.Namespace) -> int:
+    from src.database import DatabaseConnection
+    from src.playlist_cleanup import cleanup_decade_playlists_below_track_count, print_decade_cleanup_report
+    from src.playlist_generator import generate_all_decade_playlists, print_generation_summary
+
+    configure_logging(args.verbose)
+    logger = logging.getLogger(__name__)
+
+    dry_run = not args.execute
+    cleanup_results = cleanup_decade_playlists_below_track_count(
+        min_tracks=args.min_tracks,
+        dry_run=dry_run,
+    )
+    print_decade_cleanup_report(cleanup_results, dry_run=dry_run)
+
+    if dry_run:
+        logger.info("Dry run enabled; skipping playlist regeneration.")
+        return 0
+
+    with DatabaseConnection() as conn:
+        results = generate_all_decade_playlists(conn)
+        print_generation_summary(results)
+    return 0
+
+
+# ##################################################################
+# main
+# parses arguments and dispatches to command handlers
+def main(argv: list[str]) -> int:
+    setproctitle.setproctitle("billboard-charts")
+    parser = argparse.ArgumentParser(description="Billboard Hot 100 Charts Database")
+    sub = parser.add_subparsers(dest="cmd", required=True)
+
+    p_download = sub.add_parser("download", help="Download Hot 100 chart data")
+    p_download.add_argument(
+        "--limit", type=int, help="Limit number of dates to download"
+    )
+    p_download.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
+    p_download.set_defaults(func=command_download)
+
+    p_stats = sub.add_parser("stats", help="Show database statistics")
+    p_stats.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
+    p_stats.set_defaults(func=command_stats)
+
+    p_test = sub.add_parser("test", help="Run specific tests")
+    p_test.add_argument("target", help="Test target (e.g., src/database_test.py)")
+    p_test.set_defaults(func=command_test)
+
+    p_lint = sub.add_parser("lint", help="Run linter")
+    p_lint.set_defaults(func=command_lint)
+
+    p_check = sub.add_parser("check", help="Run full test suite and quality gates")
+    p_check.set_defaults(func=command_check)
+
+    p_playlists = sub.add_parser("playlists", help="Generate decade playlists in Apple Music")
+    p_playlists.add_argument(
+        "--decade", type=int, help="Specific decade to generate (e.g., 1960)"
+    )
+    p_playlists.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
+    p_playlists.set_defaults(func=command_playlists)
+
+    p_top = sub.add_parser("top", help="Show top songs for a year or decade")
+    p_top.add_argument("--year", type=int, help="Year to show top songs for")
+    p_top.add_argument("--decade", type=int, help="Decade to show all top songs for")
+    p_top.add_argument("--limit", type=int, default=10, help="Number of songs per year")
+    p_top.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
+    p_top.set_defaults(func=command_top_songs)
+
+    p_cleanup = sub.add_parser("cleanup", help="Remove duplicate playlists")
+    p_cleanup.add_argument(
+        "--execute", action="store_true", help="Actually delete duplicates (default is dry run)"
+    )
+    p_cleanup.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
+    p_cleanup.set_defaults(func=command_cleanup)
+
+    p_refresh = sub.add_parser(
+        "refresh-playlists",
+        help="Delete incomplete decade playlists and regenerate them",
+    )
+    p_refresh.add_argument(
+        "--min-tracks",
+        type=int,
+        default=50,
+        help="Minimum track count required to keep a decade playlist",
+    )
+    p_refresh.add_argument(
+        "--execute",
+        action="store_true",
+        help="Actually delete playlists and regenerate (default is dry run)",
+    )
+    p_refresh.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
+    p_refresh.set_defaults(func=command_refresh_playlists)
+
+    args = parser.parse_args(argv)
+    return args.func(args)
+
+
+# ##################################################################
+# entry point
+# standard python pattern for dispatching main
+if __name__ == "__main__":
+    sys.exit(main(sys.argv[1:]))
