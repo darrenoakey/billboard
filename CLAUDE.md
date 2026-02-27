@@ -17,6 +17,14 @@
 - Private key file referenced by path in config, stored at `~/keys/apple music/`
 - `src/apple_music.py:load_config()` is the canonical config loader — tests and tools should use it (or read config.json directly for standalone scripts)
 
+## Song Arena
+
+- Web UI on port 8780, managed by `auto` as `song-arena`
+- Arena uses graph-based scoring (BFS transitive wins), not ELO
+- `get_matchup_for_song()` finds a new opponent for a specific song (used after eliminate to keep survivor)
+- MusicKit v3 `seekToTime()` requires waiting for `PlaybackStates.playing` before seeking — otherwise silently fails
+- Static files use content-hash cache busting via `{{ static:filename }}` template tags
+
 ## Code Standards
 
 - Python codebase
