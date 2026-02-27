@@ -190,6 +190,120 @@ def command_refresh_playlists(args: argparse.Namespace) -> int:
 
 
 # ##################################################################
+# command best of
+# shows or creates best-of-decade playlists
+def command_best_of(args: argparse.Namespace) -> int:
+    from src.database import DatabaseConnection
+    from src.best_of_decade_generator import (
+        generate_best_of_decade_playlist,
+        generate_all_best_of_playlists,
+        generate_best_of_decade_image,
+        print_best_of_dry_run,
+        print_best_of_summary,
+    )
+    from src.best_of_decade import get_best_songs_for_decade
+
+    configure_logging(args.verbose)
+
+    with DatabaseConnection() as conn:
+        if not args.execute:
+            print_best_of_dry_run(conn, decade_start=args.decade)
+            return 0
+
+        if args.decade:
+            results = [generate_best_of_decade_playlist(conn, args.decade)]
+            songs = get_best_songs_for_decade(conn, args.decade, limit=10)
+            if results[0].created and songs:
+                generate_best_of_decade_image(args.decade, songs)
+        else:
+            results = generate_all_best_of_playlists(conn)
+        print_best_of_summary(results)
+    return 0
+
+
+# ##################################################################
+# command best of images
+# regenerates cover images for best-of playlists
+def command_best_of_images(args: argparse.Namespace) -> int:
+    from src.database import DatabaseConnection
+    from src.best_of_decade import get_best_songs_for_decade, get_best_songs_all_decades
+    from src.best_of_decade_generator import generate_best_of_decade_image, generate_best_of_best_image
+
+    configure_logging(args.verbose)
+
+    with DatabaseConnection() as conn:
+        if args.decade:
+            songs = get_best_songs_for_decade(conn, args.decade, limit=10)
+            if songs:
+                generate_best_of_decade_image(args.decade, songs)
+            else:
+                print(f"No songs found for {args.decade}s")
+        else:
+            all_decades = get_best_songs_all_decades(conn, limit=10)
+            for decade in sorted(all_decades.keys()):
+                generate_best_of_decade_image(decade, all_decades[decade])
+            generate_best_of_best_image(sorted(all_decades.keys()))
+    return 0
+
+
+# ##################################################################
+# command arena
+# starts the song arena web server
+def command_arena(args: argparse.Namespace) -> int:
+    configure_logging(args.verbose)
+    from src.arena_server import run_arena_server
+
+    run_arena_server()
+    return 0
+
+
+# ##################################################################
+# command arena seed
+# seeds or re-seeds the arena database
+def command_arena_seed(args: argparse.Namespace) -> int:
+    from src.database import DatabaseConnection
+    from src.arena import ensure_arena_schema, seed_arena, get_arena_stats
+
+    configure_logging(args.verbose)
+
+    with DatabaseConnection() as conn:
+        ensure_arena_schema(conn)
+        result = seed_arena(conn)
+        stats = get_arena_stats(conn)
+        print(f"Seeded: {result['added']} added, {result['skipped']} skipped")
+        print(f"Total songs: {stats['total_songs']}")
+        print(f"Decades: {', '.join(str(d) + 's' for d in stats['decades'])}")
+    return 0
+
+
+# ##################################################################
+# command arena stats
+# shows arena statistics from the cli
+def command_arena_stats(args: argparse.Namespace) -> int:
+    from src.database import DatabaseConnection
+    from src.arena import ensure_arena_schema, get_arena_stats, get_leaderboard
+
+    configure_logging(args.verbose)
+
+    with DatabaseConnection() as conn:
+        ensure_arena_schema(conn)
+        stats = get_arena_stats(conn)
+        print(f"Total songs: {stats['total_songs']}")
+        print(f"Total matches: {stats['total_matches']}")
+        print(f"Songs with matches: {stats['songs_with_matches']}")
+        print(f"Eliminated: {stats['eliminated']}")
+        print(f"Decades: {', '.join(str(d) + 's' for d in stats['decades'])}")
+
+        lb = get_leaderboard(conn)
+        if lb:
+            print(f"\nTop {len(lb)} songs:")
+            print("=" * 60)
+            for i, song in enumerate(lb, 1):
+                print(f"{i:3}. {song['artist']} - {song['song']} (ELO: {song['elo_score']:.0f}, {song['wins']}W-{song['losses']}L)")
+    return 0
+
+
+# ##################################################################
 # main
 # parses arguments and dispatches to command handlers
 def main(argv: list[str]) -> int:
@@ -256,6 +370,35 @@ def main(argv: list[str]) -> int:
     )
     p_refresh.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
     p_refresh.set_defaults(func=command_refresh_playlists)
+
+    p_bestof = sub.add_parser("best-of", help="Show or create best-of-decade playlists")
+    p_bestof.add_argument(
+        "--decade", type=int, help="Specific decade (e.g., 1980)"
+    )
+    p_bestof.add_argument(
+        "--execute", action="store_true", help="Create playlists and generate images (default is dry run)"
+    )
+    p_bestof.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
+    p_bestof.set_defaults(func=command_best_of)
+
+    p_arena = sub.add_parser("arena", help="Start the Song Arena web server")
+    p_arena.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
+    p_arena.set_defaults(func=command_arena)
+
+    p_arena_seed = sub.add_parser("arena-seed", help="Seed or re-seed the arena database")
+    p_arena_seed.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
+    p_arena_seed.set_defaults(func=command_arena_seed)
+
+    p_arena_stats = sub.add_parser("arena-stats", help="Show arena statistics")
+    p_arena_stats.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
+    p_arena_stats.set_defaults(func=command_arena_stats)
+
+    p_bestof_images = sub.add_parser("best-of-images", help="Regenerate best-of playlist cover images")
+    p_bestof_images.add_argument(
+        "--decade", type=int, help="Specific decade (e.g., 1980)"
+    )
+    p_bestof_images.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
+    p_bestof_images.set_defaults(func=command_best_of_images)
 
     args = parser.parse_args(argv)
     return args.func(args)

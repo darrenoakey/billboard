@@ -1,0 +1,461 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #08080d;
+    color: #e0e0e0;
+    min-height: 100vh;
+    overflow-x: hidden;
+}
+
+.bg-glow {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background:
+        radial-gradient(ellipse at 20% 20%, rgba(255, 170, 0, 0.06) 0%, transparent 60%),
+        radial-gradient(ellipse at 80% 80%, rgba(255, 215, 0, 0.04) 0%, transparent 60%),
+        radial-gradient(ellipse at 50% 50%, rgba(180, 130, 0, 0.02) 0%, transparent 80%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+/* ---- HEADER / BANNER ---- */
+.hero {
+    position: relative;
+    text-align: center;
+    padding: 40px 20px 20px;
+    z-index: 1;
+    overflow: hidden;
+}
+
+.hero::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, transparent, #ffd700, #ff8c00, #ffd700, transparent);
+}
+
+.hero-logo {
+    width: 80px;
+    height: 80px;
+    border-radius: 18px;
+    margin-bottom: 12px;
+    filter: drop-shadow(0 0 20px rgba(255, 215, 0, 0.4));
+}
+
+.hero h1 {
+    font-size: 3rem;
+    font-weight: 900;
+    background: linear-gradient(135deg, #ffd700 0%, #ffaa00 50%, #ff8c00 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    line-height: 1;
+    margin-bottom: 6px;
+}
+
+.hero .tagline {
+    color: #777;
+    font-size: 1rem;
+    font-weight: 500;
+    letter-spacing: 1px;
+}
+
+/* ---- STATS ---- */
+.stats-bar {
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    padding: 16px 20px;
+    background: linear-gradient(180deg, rgba(255, 215, 0, 0.04), transparent);
+    border-bottom: 1px solid rgba(255, 215, 0, 0.06);
+    position: relative;
+    z-index: 1;
+}
+
+.stat-value {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #ffd700;
+    text-align: center;
+}
+
+.stat-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #555;
+    text-align: center;
+}
+
+/* ---- ARENA ---- */
+.arena-container {
+    display: flex;
+    justify-content: center;
+    align-items: stretch;
+    gap: 24px;
+    padding: 36px 24px 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+}
+
+.vs-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+    width: 64px;
+    height: 64px;
+    background: linear-gradient(135deg, #ffd700, #ff8c00);
+    border-radius: 50%;
+    font-weight: 900;
+    font-size: 1.2rem;
+    color: #08080d;
+    flex-shrink: 0;
+    box-shadow: 0 0 30px rgba(255, 215, 0, 0.35), 0 0 60px rgba(255, 215, 0, 0.1);
+}
+
+.song-card {
+    flex: 1;
+    max-width: 420px;
+    background: linear-gradient(180deg, rgba(28, 28, 40, 0.97), rgba(14, 14, 20, 0.99));
+    border: 1px solid rgba(255, 215, 0, 0.08);
+    border-radius: 20px;
+    padding: 32px 28px;
+    text-align: center;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.song-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.5), transparent);
+}
+
+.song-card:hover {
+    border-color: rgba(255, 215, 0, 0.25);
+    transform: translateY(-3px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5), 0 0 20px rgba(255, 215, 0, 0.05);
+}
+
+.eliminate-btn {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid rgba(244, 67, 54, 0.3);
+    background: rgba(244, 67, 54, 0.08);
+    color: #f44336;
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s ease;
+    z-index: 2;
+}
+
+.eliminate-btn:hover {
+    background: rgba(244, 67, 54, 0.2);
+    border-color: #f44336;
+    transform: scale(1.1);
+}
+
+.decade-badge {
+    display: inline-block;
+    padding: 4px 16px;
+    background: rgba(255, 215, 0, 0.08);
+    border: 1px solid rgba(255, 215, 0, 0.15);
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #daa520;
+    margin-bottom: 16px;
+    letter-spacing: 1px;
+}
+
+.song-title {
+    font-size: 1.5rem;
+    font-weight: 800;
+    color: #fff;
+    margin-bottom: 8px;
+    line-height: 1.25;
+}
+
+.song-artist {
+    font-size: 1.05rem;
+    color: #999;
+    margin-bottom: 6px;
+}
+
+.song-score {
+    font-size: 0.85rem;
+    color: #555;
+    margin-bottom: 20px;
+    font-variant-numeric: tabular-nums;
+}
+
+.play-row {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    margin: 0 auto 20px;
+}
+
+.play-btn {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    border: 2px solid rgba(255, 215, 0, 0.25);
+    background: rgba(255, 215, 0, 0.06);
+    color: #ffd700;
+    font-size: 1.4rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.play-btn:hover {
+    background: rgba(255, 215, 0, 0.12);
+    border-color: rgba(255, 215, 0, 0.45);
+    transform: scale(1.08);
+}
+
+.play-btn.playing {
+    background: rgba(255, 215, 0, 0.18);
+    border-color: #ffd700;
+    animation: pulse 1.5s ease infinite;
+}
+
+.play-btn.skip-btn {
+    width: 48px;
+    height: 48px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    border-color: rgba(255, 215, 0, 0.15);
+    align-self: center;
+}
+
+@keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.25); }
+    50% { box-shadow: 0 0 0 10px rgba(255, 215, 0, 0); }
+}
+
+.pick-btn {
+    width: 100%;
+    padding: 16px;
+    background: linear-gradient(135deg, #ffd700, #ffaa00);
+    color: #08080d;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 800;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.pick-btn:hover {
+    transform: scale(1.03);
+    box-shadow: 0 6px 24px rgba(255, 215, 0, 0.35);
+}
+
+.pick-btn:active { transform: scale(0.97); }
+.pick-btn:disabled { opacity: 0.25; cursor: not-allowed; transform: none; }
+
+/* ---- TIE BUTTON ---- */
+.tie-bar {
+    display: flex;
+    justify-content: center;
+    padding: 0 24px 30px;
+    max-width: 300px;
+    margin: 0 auto;
+    position: relative;
+    z-index: 1;
+}
+
+.tie-btn {
+    flex: 1;
+    padding: 12px 20px;
+    border-radius: 10px;
+    border: 1px solid;
+    font-size: 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    background: rgba(76, 175, 80, 0.08);
+    border-color: rgba(76, 175, 80, 0.3);
+    color: #4caf50;
+}
+
+.tie-btn:disabled { opacity: 0.25; cursor: not-allowed; transform: none; }
+
+.tie-btn:hover:not(:disabled) {
+    background: rgba(76, 175, 80, 0.15);
+    box-shadow: 0 4px 16px rgba(76, 175, 80, 0.2);
+}
+
+/* ---- RESULT FLASH ---- */
+.result-flash {
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.88);
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+
+.result-flash.show { opacity: 1; pointer-events: auto; }
+
+.result-content { text-align: center; }
+
+.result-content .winner-label {
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    color: #ffd700;
+    margin-bottom: 12px;
+}
+
+.result-content .winner-song {
+    font-size: 2.5rem;
+    font-weight: 900;
+    color: #fff;
+    margin-bottom: 8px;
+}
+
+.result-content .winner-artist {
+    font-size: 1.2rem;
+    color: #999;
+    margin-bottom: 16px;
+}
+
+.result-content .result-detail {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #ffd700;
+}
+
+/* ---- LEADERBOARD ---- */
+.leaderboard-section {
+    max-width: 700px;
+    margin: 0 auto 50px;
+    padding: 0 24px;
+    position: relative;
+    z-index: 1;
+}
+
+.lb-header {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-bottom: 20px;
+}
+
+.lb-header h2 {
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #ffd700;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+}
+
+.lb-header .trophy { font-size: 1.6rem; }
+
+.lb-divider {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 215, 0, 0.2), transparent);
+    margin-bottom: 16px;
+}
+
+.lb-table { width: 100%; border-collapse: collapse; }
+
+.lb-table tr {
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+    transition: background 0.15s;
+}
+
+.lb-table tr:hover { background: rgba(255, 215, 0, 0.03); }
+
+.lb-table td { padding: 12px 10px; font-size: 0.95rem; }
+
+.lb-rank {
+    width: 40px;
+    font-weight: 800;
+    font-size: 1.1rem;
+    color: #444;
+    text-align: center;
+}
+
+.lb-rank.gold { color: #ffd700; font-size: 1.3rem; }
+.lb-rank.silver { color: #c0c0c0; font-size: 1.2rem; }
+.lb-rank.bronze { color: #cd7f32; font-size: 1.15rem; }
+
+.lb-song { font-weight: 700; color: #e8e8e8; font-size: 1rem; }
+.lb-artist { color: #777; font-size: 0.85rem; }
+.lb-decade { color: #555; font-size: 0.75rem; }
+
+.lb-score {
+    text-align: right;
+    font-weight: 800;
+    color: #ffd700;
+    font-size: 1.05rem;
+    font-variant-numeric: tabular-nums;
+}
+
+.lb-empty {
+    text-align: center;
+    padding: 30px;
+    color: #444;
+    font-style: italic;
+}
+
+/* ---- LOADING ---- */
+.loading {
+    text-align: center;
+    padding: 60px 20px;
+    color: #555;
+}
+
+.loading .spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255, 215, 0, 0.08);
+    border-top-color: #ffd700;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    margin: 0 auto 16px;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ---- RESPONSIVE ---- */
+@media (max-width: 750px) {
+    .arena-container { flex-direction: column; align-items: center; }
+    .song-card { max-width: 100%; }
+    .vs-badge { width: 48px; height: 48px; font-size: 1rem; }
+    .hero h1 { font-size: 2rem; }
+    .hero-logo { width: 56px; height: 56px; }
+}
