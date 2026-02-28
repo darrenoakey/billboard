@@ -8,7 +8,9 @@ Download every Billboard Hot 100 chart since 1958 and automatically generate dec
 
 - Downloads 3,500+ weeks of Billboard Hot 100 chart data into a local database
 - Ranks songs using a composite scoring algorithm based on chart performance
-- Searches the Apple Music catalog and builds decade playlists (1950s through 2020s) with the top 10 songs from each year
+- Searches the Apple Music catalog and builds decade playlists (1950s through 2020s) with the top songs from each year
+- Generates "Best Of" playlists highlighting the top songs per decade with cover art
+- Provides a Song Arena — an interactive web UI for head-to-head song matchups to build your own rankings
 - Manages playlists: detects duplicates, removes incomplete playlists, and regenerates them
 
 ## Prerequisites
@@ -26,11 +28,12 @@ pip install -r requirements.txt
 ### Apple Music Authentication
 
 1. Place your MusicKit private key at `~/keys/apple music/AuthKey_<YOUR_KEY_ID>.p8`
-2. Run the authentication server to obtain your Music User Token:
+2. Create `~/.config/billboard/config.json` with your team ID and key ID
+3. Run the authentication server to obtain your Music User Token:
    ```bash
    python tools/music_auth_server.py
    ```
-3. Authorize in the browser window that opens. Your token is saved to `~/.config/billboard/music_user_token`.
+4. Authorize in the browser window that opens. Your token is saved to `~/.config/billboard/music_user_token`.
 
 ## Usage
 
@@ -110,6 +113,60 @@ Generate a playlist for a single decade:
 ```
 
 This creates a playlist called "1980s Top Hits" in your Apple Music library containing the top 10 songs from each year of the decade, ordered chronologically.
+
+### Best-Of Decade Playlists
+
+Preview what best-of playlists would be created:
+
+```bash
+./run best-of
+```
+
+Create best-of playlists with generated cover art:
+
+```bash
+./run best-of --execute
+```
+
+Create for a specific decade:
+
+```bash
+./run best-of --decade 1980 --execute
+```
+
+Regenerate cover images for existing best-of playlists:
+
+```bash
+./run best-of-images
+```
+
+Regenerate for a specific decade:
+
+```bash
+./run best-of-images --decade 1980
+```
+
+### Song Arena
+
+Start the interactive Song Arena web server for head-to-head song matchups:
+
+```bash
+./run arena
+```
+
+The arena runs at `http://localhost:8780`. Songs are presented in pairs and you pick the winner to build rankings over time.
+
+Seed the arena database with songs from chart data:
+
+```bash
+./run arena-seed
+```
+
+View arena statistics and the current leaderboard:
+
+```bash
+./run arena-stats
+```
 
 ### Clean Up Duplicate Playlists
 

@@ -99,7 +99,9 @@ def calculate_elo(winner_elo: float, loser_elo: float, k: float = 32) -> tuple[f
 # record matchup
 # normalizes IDs to lo/hi order, inserts into arena_matchup
 # outcome from caller: 'a_wins'|'b_wins'|'tie'
-def record_matchup(conn: sqlite3.Connection, song_a_id: int, song_b_id: int, outcome: str) -> None:
+def record_matchup(
+    conn: sqlite3.Connection, song_a_id: int, song_b_id: int, outcome: str, *, replace: bool = False
+) -> None:
     lo = min(song_a_id, song_b_id)
     hi = max(song_a_id, song_b_id)
     if outcome == "a_wins":
@@ -110,8 +112,9 @@ def record_matchup(conn: sqlite3.Connection, song_a_id: int, song_b_id: int, out
         stored = "tie"
     else:
         raise ValueError(f"Invalid outcome: {outcome}")
+    verb = "INSERT OR REPLACE" if replace else "INSERT"
     conn.execute(
-        "INSERT INTO arena_matchup (song_lo_id, song_hi_id, outcome) VALUES (?, ?, ?)",
+        f"{verb} INTO arena_matchup (song_lo_id, song_hi_id, outcome) VALUES (?, ?, ?)",
         (lo, hi, stored),
     )
     conn.commit()
@@ -185,7 +188,8 @@ def get_matchup_for_song(conn: sqlite3.Connection, song_id: int) -> tuple[dict, 
 
 # ##################################################################
 # compute scores
-# BFS transitive reachability: score = number of songs you transitively beat
+# SCC condensation + DAG reachability: cycles are collapsed so members
+# score equally based on what the group collectively beats downstream.
 def compute_scores(conn: sqlite3.Connection) -> dict[int, int]:
     rows = conn.execute(
         "SELECT song_lo_id, song_hi_id, outcome FROM arena_matchup WHERE outcome != 'tie'"
@@ -201,21 +205,105 @@ def compute_scores(conn: sqlite3.Connection) -> dict[int, int]:
             graph.setdefault(lo, []).append(hi)
         else:  # hi_wins
             graph.setdefault(hi, []).append(lo)
-    # BFS from each node
-    scores: dict[int, int] = {}
+
+    if not nodes:
+        return {}
+
+    # Tarjan's SCC algorithm
+    scc_list = _tarjan_scc(nodes, graph)
+
+    # Map each node to its SCC index
+    node_to_scc: dict[int, int] = {}
+    for idx, scc in enumerate(scc_list):
+        for node in scc:
+            node_to_scc[node] = idx
+
+    # Build condensed DAG (scc_idx -> set of downstream scc_idxs)
+    dag: dict[int, set[int]] = {}
     for node in nodes:
-        visited: set[int] = {node}  # exclude self from reachability
-        queue = deque(graph.get(node, []))
+        src = node_to_scc[node]
+        for neighbor in graph.get(node, []):
+            dst = node_to_scc[neighbor]
+            if src != dst:
+                dag.setdefault(src, set()).add(dst)
+
+    # BFS on DAG from each SCC to count reachable downstream songs
+    scc_scores: dict[int, int] = {}
+    for idx in range(len(scc_list)):
+        visited: set[int] = {idx}
+        queue = deque(dag.get(idx, set()))
+        reachable_songs = 0
         while queue:
             cur = queue.popleft()
             if cur in visited:
                 continue
             visited.add(cur)
-            for neighbor in graph.get(cur, []):
+            reachable_songs += len(scc_list[cur])
+            for neighbor in dag.get(cur, set()):
                 if neighbor not in visited:
                     queue.append(neighbor)
-        scores[node] = len(visited) - 1  # subtract self
+        scc_scores[idx] = reachable_songs
+
+    # Assign score to each song
+    scores: dict[int, int] = {}
+    for node in nodes:
+        scores[node] = scc_scores[node_to_scc[node]]
     return scores
+
+
+def _tarjan_scc(nodes: set[int], graph: dict[int, list[int]]) -> list[list[int]]:
+    """Tarjan's algorithm for strongly connected components (iterative)."""
+    index_counter = [0]
+    node_index: dict[int, int] = {}
+    node_lowlink: dict[int, int] = {}
+    on_stack: set[int] = set()
+    stack: list[int] = []
+    sccs: list[list[int]] = []
+
+    for node in nodes:
+        if node in node_index:
+            continue
+        # Iterative DFS using explicit call stack
+        call_stack: list[tuple[int, int]] = [(node, 0)]
+        while call_stack:
+            v, ni = call_stack[-1]
+            if ni == 0:
+                # First visit
+                node_index[v] = index_counter[0]
+                node_lowlink[v] = index_counter[0]
+                index_counter[0] += 1
+                stack.append(v)
+                on_stack.add(v)
+            neighbors = graph.get(v, [])
+            if ni > 0 and ni <= len(neighbors):
+                # Return from recursion on neighbors[ni-1]
+                w = neighbors[ni - 1]
+                node_lowlink[v] = min(node_lowlink[v], node_lowlink[w])
+            found_next = False
+            for i in range(ni, len(neighbors)):
+                w = neighbors[i]
+                if w not in node_index:
+                    call_stack[-1] = (v, i + 1)
+                    call_stack.append((w, 0))
+                    found_next = True
+                    break
+                elif w in on_stack:
+                    node_lowlink[v] = min(node_lowlink[v], node_index[w])
+            if not found_next:
+                call_stack.pop()
+                if node_lowlink[v] == node_index[v]:
+                    scc: list[int] = []
+                    while True:
+                        w = stack.pop()
+                        on_stack.discard(w)
+                        scc.append(w)
+                        if w == v:
+                            break
+                    sccs.append(scc)
+                if call_stack:
+                    parent = call_stack[-1][0]
+                    node_lowlink[parent] = min(node_lowlink[parent], node_lowlink[v])
+    return sccs
 
 
 # ##################################################################
@@ -238,6 +326,20 @@ def get_leaderboard(conn: sqlite3.Connection, limit: int = 10) -> list[dict]:
         result.append(d)
     result.sort(key=lambda x: x["score"], reverse=True)
     return result[:limit]
+
+
+# ##################################################################
+# get arena stats
+# returns summary counts for the arena
+def get_random_songs(conn: sqlite3.Connection, n: int = 16) -> list[dict]:
+    candidates = [
+        dict(row)
+        for row in conn.execute(
+            "SELECT id, song, artist, decade FROM arena_song WHERE eliminated = 0"
+        ).fetchall()
+    ]
+    random.shuffle(candidates)
+    return candidates[:n]
 
 
 # ##################################################################

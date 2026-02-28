@@ -5,6 +5,7 @@ from src.arena import (
     record_matchup,
     eliminate_song,
     get_matchup,
+    get_random_songs,
     compute_scores,
     get_leaderboard,
     get_arena_stats,
@@ -76,6 +77,18 @@ class TestRecordMatchup:
         with pytest.raises(sqlite3.IntegrityError):
             record_matchup(conn, id_b, id_a, "b_wins")
 
+    def test_replace_overwrites_existing(self):
+        conn = make_test_db()
+        id_a = insert_song(conn, "Song A", "Artist A", 1980)
+        id_b = insert_song(conn, "Song B", "Artist B", 1980)
+        record_matchup(conn, id_a, id_b, "a_wins")
+        row = conn.execute("SELECT outcome FROM arena_matchup").fetchone()
+        assert row["outcome"] == "lo_wins"
+        # replace=True should overwrite without error
+        record_matchup(conn, id_a, id_b, "b_wins", replace=True)
+        row = conn.execute("SELECT outcome FROM arena_matchup").fetchone()
+        assert row["outcome"] == "hi_wins"
+
 
 class TestComputeScores:
     def test_chain(self):
@@ -119,8 +132,8 @@ class TestComputeScores:
         assert scores.get(a, 0) == 0
         assert scores.get(b, 0) == 0
 
-    def test_cycle_handling(self):
-        """A>B>C>A → each reaches 2"""
+    def test_pure_cycle(self):
+        """A>B>C>A — pure rock-paper-scissors, nobody wins → all score 0"""
         conn = make_test_db()
         a = insert_song(conn, "A", "X", 1980)
         b = insert_song(conn, "B", "X", 1980)
@@ -129,9 +142,46 @@ class TestComputeScores:
         record_matchup(conn, b, c, "a_wins")
         record_matchup(conn, c, a, "a_wins")
         scores = compute_scores(conn)
+        assert scores[a] == 0
+        assert scores[b] == 0
+        assert scores[c] == 0
+
+    def test_cycle_with_chain_downstream(self):
+        """A>B>C>A cycle, C also beats D>E → cycle=2, D=1, E=0"""
+        conn = make_test_db()
+        a = insert_song(conn, "A", "X", 1980)
+        b = insert_song(conn, "B", "X", 1980)
+        c = insert_song(conn, "C", "X", 1980)
+        d = insert_song(conn, "D", "X", 1980)
+        e = insert_song(conn, "E", "X", 1980)
+        record_matchup(conn, a, b, "a_wins")
+        record_matchup(conn, b, c, "a_wins")
+        record_matchup(conn, c, a, "a_wins")
+        record_matchup(conn, c, d, "a_wins")
+        record_matchup(conn, d, e, "a_wins")
+        scores = compute_scores(conn)
         assert scores[a] == 2
         assert scores[b] == 2
         assert scores[c] == 2
+        assert scores[d] == 1
+        assert scores[e] == 0
+
+    def test_cycle_beats_outsider(self):
+        """A>B>C>A cycle, A also beats D → cycle members all score 1"""
+        conn = make_test_db()
+        a = insert_song(conn, "A", "X", 1980)
+        b = insert_song(conn, "B", "X", 1980)
+        c = insert_song(conn, "C", "X", 1980)
+        d = insert_song(conn, "D", "X", 1980)
+        record_matchup(conn, a, b, "a_wins")
+        record_matchup(conn, b, c, "a_wins")
+        record_matchup(conn, c, a, "a_wins")
+        record_matchup(conn, a, d, "a_wins")
+        scores = compute_scores(conn)
+        assert scores[a] == 1
+        assert scores[b] == 1
+        assert scores[c] == 1
+        assert scores[d] == 0
 
     def test_empty(self):
         conn = make_test_db()
@@ -262,6 +312,46 @@ class TestSeedArena:
         assert result["decades"] == 1
         count = conn.execute("SELECT COUNT(*) as c FROM arena_song").fetchone()["c"]
         assert count == result["added"]
+
+
+class TestGetRandomSongs:
+    def test_returns_n_songs(self):
+        conn = make_test_db()
+        for i in range(20):
+            insert_song(conn, f"Song {i}", f"Artist {i}", 1980)
+        songs = get_random_songs(conn, 16)
+        assert len(songs) == 16
+        ids = [s["id"] for s in songs]
+        assert len(set(ids)) == 16  # all unique
+
+    def test_returns_fewer_if_not_enough(self):
+        conn = make_test_db()
+        for i in range(5):
+            insert_song(conn, f"Song {i}", f"Artist {i}", 1980)
+        songs = get_random_songs(conn, 16)
+        assert len(songs) == 5
+
+    def test_excludes_eliminated(self):
+        conn = make_test_db()
+        ids = []
+        for i in range(10):
+            ids.append(insert_song(conn, f"Song {i}", f"Artist {i}", 1980))
+        eliminate_song(conn, ids[0])
+        for _ in range(20):
+            songs = get_random_songs(conn, 10)
+            returned_ids = [s["id"] for s in songs]
+            assert ids[0] not in returned_ids
+
+    def test_has_required_fields(self):
+        conn = make_test_db()
+        insert_song(conn, "Test", "Artist", 1990)
+        songs = get_random_songs(conn, 1)
+        assert len(songs) == 1
+        s = songs[0]
+        assert "id" in s
+        assert "song" in s
+        assert "artist" in s
+        assert "decade" in s
 
 
 class TestCalculateElo:

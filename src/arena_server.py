@@ -13,6 +13,7 @@ from src.arena import (
     seed_arena,
     get_matchup,
     get_matchup_for_song,
+    get_random_songs,
     record_matchup,
     eliminate_song,
     get_leaderboard,
@@ -100,8 +101,22 @@ HTML_PAGE = """<!DOCTYPE html>
         </div>
     </div>
 
+    <div class="mode-toggle">
+        <button id="modeRandom" class="mode-btn active" onclick="toggleMode('random')">Random</button>
+        <button id="modeKoth" class="mode-btn" onclick="toggleMode('koth')">King of the Hill</button>
+        <button id="modeTop4" class="mode-btn" onclick="toggleMode('top4')">Top 4</button>
+    </div>
+
     <div class="arena-container" id="arenaContainer">
         <div class="loading"><div class="spinner"></div><div>Loading matchup...</div></div>
+    </div>
+
+    <div class="grid-view" id="gridView" style="display:none;">
+        <div class="grid-container" id="gridContainer"></div>
+        <div class="grid-actions">
+            <button class="grid-submit-btn" id="gridSubmitBtn" onclick="submitTop4()" disabled>Submit</button>
+            <button class="grid-reset-btn" id="gridResetBtn" onclick="resetTop4()">Reset</button>
+        </div>
     </div>
 
     <div class="tie-bar" id="tieBar" style="display:none;">
@@ -152,6 +167,8 @@ class ArenaHandler(http.server.BaseHTTPRequestHandler):
             self._json_response({"token": ArenaHandler.dev_token})
         elif self.path == "/api/matchup" or self.path.startswith("/api/matchup?"):
             self._serve_matchup()
+        elif self.path == "/api/grid-songs":
+            self._serve_grid_songs()
         elif self.path.startswith("/api/leaderboard"):
             self._serve_leaderboard()
         elif self.path == "/api/stats":
@@ -169,6 +186,8 @@ class ArenaHandler(http.server.BaseHTTPRequestHandler):
     def do_POST(self):
         if self.path == "/api/matchup-result":
             self._handle_matchup_result()
+        elif self.path == "/api/grid-result":
+            self._handle_grid_result()
         elif self.path == "/api/eliminate":
             self._handle_eliminate()
         else:
@@ -225,6 +244,29 @@ class ArenaHandler(http.server.BaseHTTPRequestHandler):
             a["score"] = scores.get(a["id"], 0)
             b["score"] = scores.get(b["id"], 0)
             self._json_response({"song_a": a, "song_b": b})
+
+    def _serve_grid_songs(self):
+        conn = ArenaHandler.db_conn
+        assert conn is not None
+        songs = get_random_songs(conn, 16)
+        self._json_response({"songs": songs})
+
+    def _handle_grid_result(self):
+        conn = ArenaHandler.db_conn
+        assert conn is not None
+        data = self._read_json()
+        rankings = data["rankings"]  # [id1, id2, id3, id4] in order
+        others = data["others"]  # [id5..id16]
+        # Record pairwise wins among ranked (1 beats 2/3/4, 2 beats 3/4, 3 beats 4)
+        for i in range(len(rankings)):
+            for j in range(i + 1, len(rankings)):
+                record_matchup(conn, rankings[i], rankings[j], "a_wins", replace=True)
+        # Each ranked song beats every unranked song
+        for ranked_id in rankings:
+            for other_id in others:
+                record_matchup(conn, ranked_id, other_id, "a_wins", replace=True)
+        lb = get_leaderboard(conn)
+        self._json_response({"leaderboard": lb})
 
     def _serve_leaderboard(self):
         conn = ArenaHandler.db_conn
