@@ -9,7 +9,7 @@ from pathlib import Path
 repo_root = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(repo_root))
 
-from src.apple_music import get_client
+from src.apple_music import get_client  # noqa: E402
 
 
 def main() -> int:

@@ -229,6 +229,60 @@ class AppleMusicClient:
         return True
 
     # ##################################################################
+    # add items to playlist
+    # adds catalog songs and/or library songs in the given order
+    def add_items_to_playlist(self, playlist_id: str, items: list[tuple[str, str]]) -> bool:
+        url = f"{APPLE_MUSIC_API_BASE}/me/library/playlists/{playlist_id}/tracks"
+        payload = {"data": [{"id": item_id, "type": item_type} for item_type, item_id in items]}
+        response = self._request("POST", url, json=payload)
+        return bool(response is not None and response.status_code in (200, 201, 204))
+
+    # ##################################################################
+    # get library playlist tracks
+    # returns every track in a library playlist, in playlist order
+    def get_library_playlist_tracks(self, playlist_id: str) -> list[dict]:
+        url: str | None = f"{APPLE_MUSIC_API_BASE}/me/library/playlists/{playlist_id}/tracks?limit=100"
+        tracks: list[dict] = []
+        while url:
+            response = self._request("GET", url)
+            if response is None or response.status_code != 200:
+                break
+            data = response.json()
+            tracks.extend(data.get("data", []))
+            next_path = data.get("next")
+            url = f"https://api.music.apple.com{next_path}" if next_path else None
+        return tracks
+
+    # ##################################################################
+    # get storefront
+    # returns the user's storefront id (e.g. au)
+    def get_storefront(self) -> str:
+        response = self._request("GET", f"{APPLE_MUSIC_API_BASE}/me/storefront")
+        if response is None or response.status_code != 200:
+            raise RuntimeError("Apple Music user token rejected; run tools/music_auth_server.py to re-authorize")
+        return response.json()["data"][0]["id"]
+
+    # ##################################################################
+    # search catalog songs
+    # searches a specific storefront catalog for songs
+    def search_catalog_songs(self, query: str, storefront: str, limit: int = 25) -> list[dict]:
+        url = f"{APPLE_MUSIC_API_BASE}/catalog/{storefront}/search"
+        response = self._request("GET", url, params={"term": query, "types": "songs", "limit": limit})
+        if response is None or response.status_code != 200:
+            return []
+        return response.json().get("results", {}).get("songs", {}).get("data", [])
+
+    # ##################################################################
+    # search library songs
+    # searches the user's own library (uploaded / purchased / added songs)
+    def search_library_songs(self, query: str, limit: int = 25) -> list[dict]:
+        url = f"{APPLE_MUSIC_API_BASE}/me/library/search"
+        response = self._request("GET", url, params={"term": query, "types": "library-songs", "limit": limit})
+        if response is None or response.status_code != 200:
+            return []
+        return response.json().get("results", {}).get("library-songs", {}).get("data", [])
+
+    # ##################################################################
     # delete library playlist
     # removes a playlist from the user library
     def delete_library_playlist(self, playlist_id: str) -> bool:

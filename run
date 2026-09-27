@@ -304,6 +304,38 @@ def command_arena_stats(args: argparse.Namespace) -> int:
 
 
 # ##################################################################
+# command movie
+# builds an apple music playlist from a film's soundtrack, e.g. ./run movie "romeo + juliet 1996"
+def command_movie(args: argparse.Namespace) -> int:
+    from src.apple_music import load_apple_music_client
+    from src.movie_playlist import create_movie_playlist, format_report
+
+    configure_logging(args.verbose)
+    query = " ".join(args.query).strip()
+    if query.lower().startswith("movie:"):
+        query = query[6:].strip()
+    report = create_movie_playlist(load_apple_music_client(), query, require=args.require)
+    print(format_report(report))
+    print("Artwork: queued for PlaylistArtwork helper (see ./run movie-artwork for status)")
+    return 0
+
+
+# ##################################################################
+# command movie artwork
+# re-launches the artwork helper for any queued playlist covers and shows its status
+def command_movie_artwork(args: argparse.Namespace) -> int:
+    import json
+    from src.movie_playlist import ARTWORK_JOBS_DIR, artwork_status, launch_artwork_helper
+
+    configure_logging(args.verbose)
+    pending = [p.name for p in ARTWORK_JOBS_DIR.glob("*.json") if p.name != "status.json"]
+    if pending:
+        launch_artwork_helper()
+    print(json.dumps({"pending_jobs": pending, "helper_status": artwork_status()}, indent=2))
+    return 0
+
+
+# ##################################################################
 # main
 # parses arguments and dispatches to command handlers
 def main(argv: list[str]) -> int:
@@ -399,6 +431,16 @@ def main(argv: list[str]) -> int:
     )
     p_bestof_images.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
     p_bestof_images.set_defaults(func=command_best_of_images)
+
+    p_movie = sub.add_parser("movie", help='Create an Apple Music playlist from a movie soundtrack ("movie: romeo + juliet")')
+    p_movie.add_argument("query", nargs="+", help="Movie name, optionally with year/director")
+    p_movie.add_argument("--require", action="append", default=[], help="Abort unless a matched track contains this text")
+    p_movie.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
+    p_movie.set_defaults(func=command_movie)
+
+    p_movie_art = sub.add_parser("movie-artwork", help="Apply queued movie playlist covers and show helper status")
+    p_movie_art.add_argument("-v", "--verbose", action="store_true", help="Verbose output")
+    p_movie_art.set_defaults(func=command_movie_artwork)
 
     args = parser.parse_args(argv)
     return args.func(args)
